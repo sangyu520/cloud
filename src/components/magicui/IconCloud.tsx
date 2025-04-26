@@ -15,9 +15,9 @@ interface IconCloudProps {
   images?: string[];
 }
 
-function easeOutCubic(t: number): number {
-  return 1 - Math.pow(1 - t, 3);
-}
+// function easeOutCubic(t: number): number {
+//   return 1 - Math.pow(1 - t, 3);
+// }
 
 export function IconCloud({ icons, images }: IconCloudProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -28,10 +28,49 @@ export function IconCloud({ icons, images }: IconCloudProps) {
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
 
   const [isMouseOnCanvas, setIsMouseOnCanvas] = useState(false); // 新增标志
-  const animationFrameRef = useRef<number>();
+  const animationFrameRef = useRef<number>(0);
   const rotationRef = useRef(rotation);
   const iconCanvasesRef = useRef<HTMLCanvasElement[]>([]);
   const imagesLoadedRef = useRef<boolean[]>([]);
+  // 1. 定义 setTargetRotation 函数
+const setTargetRotation = ({
+  x,
+  y,
+  startX,
+  startY,
+  startTime,
+  duration,
+}: {
+  x: number;
+  y: number;
+  startX: number;
+  startY: number;
+  distance: number;
+  startTime: number;
+  duration: number;
+}) => {
+  const animateRotation = () => {
+    const elapsed = performance.now() - startTime;
+    const t = Math.min(elapsed / duration, 1); // 计算已过时间的比例
+    const easeOut = 1 - Math.pow(1 - t, 3); // easeOutCubic 函数
+
+    // 计算新的旋转值
+    const newX = startX + (x - startX) * easeOut;
+    const newY = startY + (y - startY) * easeOut;
+
+    // 更新旋转状态
+    rotationRef.current = { x: newX, y: newY };
+    setRotation({ x: newX, y: newY });
+
+    // 如果动画未完成，则继续调用
+    if (t < 1) {
+      animationFrameRef.current = requestAnimationFrame(animateRotation);
+    }
+  };
+
+  // 启动动画
+  animateRotation();
+};
 
   useEffect(() => {
     if (!icons && !images) return;
@@ -270,7 +309,8 @@ export function IconCloud({ icons, images }: IconCloudProps) {
       onMouseUp={handleMouseUp}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
-      style={{ cursor: "grab", backgroundColor: "#f0f0f0" }}
+      style={{ cursor: "grab", backgroundColor: "transparent" }} // 设置透明背景
     />
+
   );
 }
